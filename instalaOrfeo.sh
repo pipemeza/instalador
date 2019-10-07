@@ -8,7 +8,7 @@ LOCAL="/var/www/html"
 DBNAME="dborfeo45"
 DBUSER="orfeo_user"
 DBPASSWORD="0rf30**$$"
-INSTALLDIR="$LOCAL/orfeo4.5/instalacion"
+INSTALLDIR="$LOCAL/orfeo5/instalacion"
 PHPDIR="/etc/php/5.6/apache2"
 POSTGRESQLDIR="/etc/postgresql/9.6/main"
 
@@ -47,7 +47,7 @@ sudo -u postgres psql -c "CREATE DATABASE $DBNAME WITH OWNER $DBUSER;"
 echo  "Cargando la base de datos inicial"
 sleep 3
 
-sudo -u postgres psql $DBNAME -c "\i $INSTALLDIR/bd/20170609_baseOrfeo45.sql;"
+sudo -u postgres psql $DBNAME -c "\i $INSTALLDIR/orfeoclear.sql;"
 sudo -u postgres psql $DBNAME -c "update usuario set usua_nuevo=0 where usua_login='ADMON';"
 
 cp $PHPDIR/php.ini $PHPDIR/php.ini.preOrfeo
