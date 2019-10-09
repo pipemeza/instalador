@@ -9,7 +9,7 @@ DBNAME="orfeo05"
 DBUSER="orfeo_user"
 DBPASSWORD="0rf30**$$"
 INSTALLDIR="$LOCAL/orfeo5/instalacion"
-PHPDIR="/etc/php/5.6/apache2"
+PHPDIR="/etc/php/5.4/apache2"
 POSTGRESQLDIR="/etc/postgresql/9.6/main"
 
 
@@ -24,7 +24,7 @@ cat advertencia.txt && sleep 10
 
 
 
-add-apt-repository ppa:ondrej/php; apt-get update; apt-get install php5.6-pgsql postgresql-9.6 apache2 libgda-5.0-postgres   postgresql-common  postgresql-client-common libpg-perl postgresql postgresql-client-9.6 php5.6 libapache2-mod-php5.6 php5.6-curl php5.6-gd php5.6-mbstring php5.6-mcrypt php5.6-mysql php5.6-xml php5.6-xmlrpc php5.6-pgsql php5.6-xsl  php5.6-imap php5.6-sqlite3 php5.6-ldap php5.6-zip zip git -y
+add-apt-repository ppa:ondrej/php; apt-get update; apt-get install php5.4-pgsql postgresql-9.6 apache2 libgda-5.0-postgres   postgresql-common-9.6  postgresql-client-common-9.6 libpg-perl postgresql-9.6 postgresql-client-9.6 php5.4 libapache2-mod-php5.4 php5.4-curl php5.4-gd php5.4-mbstring php5.4-mcrypt php5.4-mysql php5.4-xml php5.4-xmlrpc php5.4-pgsql php5.4-xsl  php5.4-imap php5.4-sqlite3 php5.4-ldap php5.4-zip zip git -y
 
 cd $LOCAL
 
