@@ -3,12 +3,12 @@
 # Script para realizar la instalacion base de orfeo
 #Contacto@carlosmora.biz
 
-REPOSITORIO="https://github.com/pipemeza/orfeo05.git"    #Repositorio Correlibre
+REPOSITORIO="https://github.com/CalicheDev/orfeo-6.2"    #Repositorio Correlibre
 LOCAL="/var/www/html"
 DBNAME="orfeo05"
 DBUSER="orfeo_user"
 DBPASSWORD="0rf30**$$"
-INSTALLDIR="$LOCAL/orfeo5/instalacion"
+INSTALLDIR="$LOCAL/orfeo-6.2/instalacion"
 PHPDIR="/etc/php/5.4/apache2"
 POSTGRESQLDIR="/etc/postgresql/9.6/main"
 
