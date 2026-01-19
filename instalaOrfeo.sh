@@ -1,62 +1,83 @@
 #!/bin/sh
 
-# Script para realizar la instalacion base de orfeo
-#Contacto@carlosmora.biz
+# Script modernizado para la instalación base de Orfeo
+# Adaptado para PHP 8.3 y PostgreSQL 16
 
-REPOSITORIO="https://github.com/CalicheDev/orfeo-6.2"    #Repositorio Correlibre
+REPOSITORIO="https://github.com/CalicheDev/orfeo-6.2"
 LOCAL="/var/www/html"
 DBNAME="orfeo05"
 DBUSER="orfeo_user"
-DBPASSWORD="0rf30**$$"
+DBPASSWORD="orfeo2026" # ¡Cambia esto!
+PHP_VER="8.3"
+PG_VER="16"
+
 INSTALLDIR="$LOCAL/orfeo-6.2/instalacion"
-PHPDIR="/etc/php/5.4/apache2"
-POSTGRESQLDIR="/etc/postgresql/9.6/main"
+PHPDIR="/etc/php/$PHP_VER/apache2"
+POSTGRESQLDIR="/etc/postgresql/$PG_VER/main"
 
+# 1. Preparación de Repositorios
+echo "Configurando repositorios modernos..."
+sudo apt-get update
+sudo apt-get install -y software-properties-common
+sudo add-apt-repository ppa:ondrej/php -y # Para versiones de PHP actualizadas
+sudo apt-get update
 
-sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
-wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | sudo apt-key add -
+# 2. Instalación de dependencias actualizadas
+echo "Instalando Apache, PHP $PHP_VER y PostgreSQL $PG_VER..."
+apt-get install -y \
+    apache2 \
+    postgresql-$PG_VER \
+    postgresql-client-$PG_VER \
+    php$PHP_VER \
+    libapache2-mod-php$PHP_VER \
+    php$PHP_VER-pgsql \
+    php$PHP_VER-curl \
+    php$PHP_VER-gd \
+    php$PHP_VER-mbstring \
+    php$PHP_VER-xml \
+    php$PHP_VER-xmlrpc \
+    php$PHP_VER-imap \
+    php$PHP_VER-sqlite3 \
+    php$PHP_VER-ldap \
+    php$PHP_VER-zip \
+    zip git curl
 
-apt-get update && apt-get upgrade -y
-
-echo  "Por favor lea con mucha atencion el siguiente mensaje: \n"
-
-cat advertencia.txt && sleep 10
-
-
-
-add-apt-repository ppa:ondrej/php; apt-get update; apt-get install php5.4-pgsql postgresql-9.6 apache2 libgda-5.0-postgres   postgresql-common-9.6  postgresql-client-common-9.6 libpg-perl postgresql-9.6 postgresql-client-9.6 php5.4 libapache2-mod-php5.4 php5.4-curl php5.4-gd php5.4-mbstring php5.4-mcrypt php5.4-mysql php5.4-xml php5.4-xmlrpc php5.4-pgsql php5.4-xsl  php5.4-imap php5.4-sqlite3 php5.4-ldap php5.4-zip zip git -y
-
+# 3. Descarga de Orfeo
 cd $LOCAL
+echo "Clonando repositorio..."
+if [ ! -d "orfeo-6.2" ]; then
+    git clone $REPOSITORIO
+fi
 
-echo  "Comienza la descarga del repositorio $REPOSITORIO"
-git clone $REPOSITORIO
-sleep 2
-chown www-data:www-data $LOCAL -Rv
-cp index.html index.html.preOrfeo
+chown -R www-data:www-data $LOCAL/orfeo-6.2
+chmod -R 755 $LOCAL/orfeo-6.2
 
-cat $INSTALLDIR/index.html > $LOCAL/index.html
+# 4. Configuración de Base de Datos
+echo "Configurando PostgreSQL..."
+sudo -u postgres psql -c "DO \$$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_user WHERE usename = '$DBUSER') THEN CREATE USER $DBUSER WITH PASSWORD '$DBPASSWORD'; END IF; END \$$;"
+sudo -u postgres psql -c "CREATE DATABASE $DBNAME WITH OWNER $DBUSER;" 2>/dev/null || echo "La base de datos ya existe."
 
-
-echo  "A continuacion se va a crear la base de datos"
-sleep 3
-cd /tmp
-sudo -u postgres psql -c "CREATE USER $DBUSER;"
-sudo -u postgres psql -c "alter user $DBUSER with password '$DBPASSWORD';"
-sudo -u postgres psql -c "CREATE DATABASE $DBNAME WITH OWNER $DBUSER;"
-
-echo  "Cargando la base de datos inicial"
-sleep 3
-
+echo "Cargando esquema inicial..."
+# Nota: Asegúrate que orfeoclear.sql sea compatible con PG 16
 sudo -u postgres psql $DBNAME -c "\i $INSTALLDIR/orfeoclear.sql;"
-sudo -u postgres psql $DBNAME -c "update usuario set usua_nuevo=0 where usua_login='ADMON';"
+sudo -u postgres psql $DBNAME -c "UPDATE usuario SET usua_nuevo=0 WHERE usua_login='ADMON';"
 
-cp $PHPDIR/php.ini $PHPDIR/php.ini.preOrfeo
-cat $INSTALLDIR/phpBase.ini > $PHPDIR/php.ini; /etc/init.d/apache2 restart
+# 5. Ajustes de Configuración de Servicios
+echo "Ajustando PHP y Apache..."
+[ -f $PHPDIR/php.ini ] && cp $PHPDIR/php.ini $PHPDIR/php.ini.bak
+# En versiones modernas, es mejor usar sed para cambiar valores específicos en lugar de sobrescribir todo
+sed -i 's/memory_limit = .*/memory_limit = 512M/' $PHPDIR/php.ini
+sed -i 's/upload_max_filesize = .*/upload_max_filesize = 20M/' $PHPDIR/php.ini
+systemctl restart apache2
 
-cp $POSTGRESQLDIR/pg_hba.conf	$POSTGRESQLDIR/pg_hba.conf.preOrfeo
-cat $INSTALLDIR/pg_hba.conf > $POSTGRESQLDIR/pg_hba.conf; /etc/init.d/postgresql restart
-cd && clear
-echo  "Instalacion de orfeo Finalizada."
-echo
-SERVIDOR=$(ifconfig  | grep inet| grep -v '127.0.0.1' | cut -d: -f2 | awk '{ print $1}' |head -n 1)
-echo "Ingrese a su servidor en la direccion: http://$SERVIDOR"
+echo "Ajustando permisos de PostgreSQL..."
+echo "host    all             all             127.0.0.1/32            md5" >> $POSTGRESQLDIR/pg_hba.conf
+systemctl restart postgresql
+
+# 6. Finalización
+clear
+echo "===================================================="
+echo "Instalación de entorno Orfeo Finalizada."
+SERVIDOR=$(hostname -I | awk '{print $1}')
+echo "Acceso web: http://$SERVIDOR/orfeo-6.2"
+echo "===================================================="
